@@ -23,4 +23,4 @@ fi
 
 # Start the handler in the foreground
 echo "Starting the handler..."
-exec python handler.py
+exec python /src/handler.py

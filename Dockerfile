@@ -10,12 +10,12 @@ RUN apt-get update && apt-get install -y \
     supervisor \
     python3 \
     python3-pip \
+    python-is-python3 \
     git && \
     rm -rf /var/lib/apt/lists/*
 
-# Create symbolic links for python and pip
-RUN ln -s /usr/bin/python3 /usr/bin/python && \
-    ln -s /usr/bin/pip3 /usr/bin/pip
+# Update pip
+RUN python3 -m pip install --upgrade pip
 
 # Install Python packages
 RUN pip install --no-cache-dir runpod python-dotenv requests Pillow numpy
@@ -85,6 +85,18 @@ RUN wget -O wan_2.1_vae.safetensors \
 
 # Set up RunPod worker
 WORKDIR /
+# Create src directory
+RUN mkdir -p /src
+
+# Copy all necessary Python files
+COPY handler.py /src/handler.py
+COPY rp_handler.py /src/rp_handler.py
+COPY settings.py /src/settings.py
+COPY start_comfy.py /src/start_comfy.py
+COPY nodes_name.txt /src/nodes_name.txt
+
+
+# Copy RunPod worker files
 COPY runpod_worker/src /src
 COPY runpod_worker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY runpod_worker/requirements.txt /requirements.txt
