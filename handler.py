@@ -18,7 +18,7 @@ def create_workflow_payload(input_data):
     total_frames = frame_rate * video_length
 
     # Load the base workflow
-    with open("workflow.json", "r") as f:
+    with open("infinitetalk_workflow.json", "r") as f:
         workflow = json.load(f)
 
     # Update the workflow with input data

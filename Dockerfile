@@ -84,7 +84,7 @@ COPY runpod_worker/requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
 # Copy workflow and other files
-COPY workflow.json /src/workflow.json
+COPY infinitetalk_workflow.json /src/infinitetalk_workflow.json
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
