@@ -7,8 +7,15 @@ ENV PYTHON_VERSION=3.11
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
-    supervisor && \
+    supervisor \
+    python3 \
+    python3-pip \
+    git && \
     rm -rf /var/lib/apt/lists/*
+
+# Create symbolic links for python and pip
+RUN ln -s /usr/bin/python3 /usr/bin/python && \
+    ln -s /usr/bin/pip3 /usr/bin/pip
 
 # Install Python packages
 RUN pip install --no-cache-dir runpod python-dotenv requests Pillow numpy
