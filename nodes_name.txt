@@ -1,0 +1,4 @@
+ComfyUI-KJNodes ----> Kijai ---> 1.1.4
+ComfyUI-WanVideoWrapper    ----> Kijai ----> 1.3.4
+audio-separation-nodes-comfyui --- > christian-byrne ---> 1.4.0
+ComfyUI-VideoHelperSuite ---> Kosinkadink ----> 1.7.5
