@@ -3,22 +3,37 @@ FROM nvidia/cuda:12.8.0-devel-ubuntu22.04
 
 # Set Python version
 ENV PYTHON_VERSION=3.11
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
     supervisor \
-    python3 \
-    python3-pip \
-    python-is-python3 \
-    git && \
+    git \
+    ffmpeg \
+    software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y python3.11 python3.11-venv python3.11-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Update pip
-RUN python3 -m pip install --upgrade pip
+# Set Python 3.11 as default
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
+    update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1
 
-# Install Python packages
-RUN pip install --no-cache-dir runpod python-dotenv requests Pillow numpy
+# Install pip for Python 3.11
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
+
+# Update pip
+RUN python -m pip install --upgrade pip
+
+# Install Python packages with specific versions
+RUN pip install --no-cache-dir \
+    runpod==1.6.0 \
+    python-dotenv==1.0.0 \
+    requests==2.31.0 \
+    Pillow==10.0.0 \
+    numpy==1.24.3
 
 WORKDIR /
 # Clone ComfyUI and set up
@@ -85,30 +100,51 @@ RUN wget -O wan_2.1_vae.safetensors \
 
 # Set up RunPod worker
 WORKDIR /
-# Create src directory
-RUN mkdir -p /src
 
-# Copy all necessary Python files
-COPY handler.py /src/handler.py
-COPY rp_handler.py /src/rp_handler.py
-COPY settings.py /src/settings.py
-COPY start_comfy.py /src/start_comfy.py
-COPY nodes_name.txt /src/nodes_name.txt
+# Create necessary directories
+RUN mkdir -p /src /input /var/log
 
+# Copy core files
+WORKDIR /src
+COPY handler.py rp_handler.py settings.py start_comfy.py ./
+COPY nodes_name.txt ./
+
+# Copy input directory contents (preserving directory structure)
+COPY input /input
 
 # Copy RunPod worker files
-COPY runpod_worker/src /src
 COPY runpod_worker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY runpod_worker/requirements.txt /requirements.txt
-RUN pip install -r /requirements.txt
+COPY runpod_worker/src/infinitetalk_workflow.json /src/
 
-# Copy workflow and other files
-COPY runpod_worker/src/infinitetalk_workflow.json /src/infinitetalk_workflow.json
+# Ensure correct permissions
+RUN chmod 644 /src/* && \
+    chmod 755 /src
+
+# Install requirements (with version check to avoid conflicts)
+RUN pip install --no-cache-dir -r /requirements.txt && \
+    pip freeze | grep -i "runpod\|python-dotenv\|requests\|numpy\|pillow"
+
+# Copy and set up entrypoint
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+# Create log files
+RUN touch /var/log/comfyui.err.log /var/log/comfyui.out.log \
+    /var/log/worker.err.log /var/log/worker.out.log && \
+    chmod 666 /var/log/*.log
+
+# Environment variables
 ENV COMFYUI_API_URL="http://127.0.0.1:8188"
 ENV PYTHONUNBUFFERED=1
+
+# Verify installation
+RUN python -c "import runpod; import dotenv; import requests; import numpy; import PIL; \
+    print(f'Python {".".join(map(str, PIL.__version__.split(".")))} environment verified with all required packages')"
+
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://127.0.0.1:8188/ || exit 1
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 

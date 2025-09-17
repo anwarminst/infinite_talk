@@ -2,6 +2,7 @@ import runpod
 import base64
 import requests
 import json
+import os
 from settings import COMFYUI_API_URL, CLIENT_ID, DEFAULT_FRAME_RATE, DEFAULT_VIDEO_LENGTH
 
 def create_workflow_payload(input_data):
@@ -17,8 +18,11 @@ def create_workflow_payload(input_data):
     height = int(input_data.get("height", 832))
     total_frames = frame_rate * video_length
 
-    # Load the base workflow
-    with open("infinitetalk_workflow.json", "r") as f:
+    # Load the base workflow (resolve path relative to this script so it's
+    # robust to different working directories when started by supervisord)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    workflow_path = os.path.join(base_dir, "infinitetalk_workflow.json")
+    with open(workflow_path, "r") as f:
         workflow = json.load(f)
 
     # Update the workflow with input data
