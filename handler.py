@@ -18,7 +18,12 @@ def create_workflow_payload(input_data):
     total_frames = frame_rate * video_length
 
     # Load the base workflow
-    with open("/src/infinitetalk_workflow.json", "r") as f:
+    import os
+    print(f"Current working directory: {os.getcwd()}")
+    print(f"Files in /src: {os.listdir('/src')}")
+    workflow_path = "/src/infinitetalk_workflow.json"
+    print(f"Checking if workflow file exists: {os.path.exists(workflow_path)}")
+    with open(workflow_path, "r") as f:
         workflow = json.load(f)
 
     # Update the workflow with input data
